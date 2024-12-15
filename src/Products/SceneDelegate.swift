@@ -15,11 +15,73 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-        window = UIWindow(frame: windowScene.coordinateSpace.bounds)
-        window?.windowScene = windowScene
-        window?.rootViewController = ViewController()
-        window?.makeKeyAndVisible()
+        
+        Task {
+            let loginData = LoginDataDto(login: "aasdasd", password: "adsasdasd")
+            let token = try await MockRegistrationService().sendLoginRequestAsync(loginData: loginData)
+            _ = TokenService(loginData: loginData, token: token)
+            
+            guard let windowScene = (scene as? UIWindowScene) else { return }
+            window = UIWindow(frame: windowScene.coordinateSpace.bounds)
+            window?.windowScene = windowScene
+            window?.rootViewController = getRootNavigationController()
+            window?.makeKeyAndVisible()
+        }
+    }
+    
+    /// Получить корневой контроллер навигации.
+    ///
+    /// - Returns: Корневой контроллер навигации
+    func getRootNavigationController() -> UINavigationController {
+        let rootView = NearestStoresView()
+        let navigationController = UINavigationController(rootViewController: rootView)
+        
+        let navigationBarAppearence = getNavigationBarAppearence()
+        navigationController.navigationBar.standardAppearance = navigationBarAppearence
+        navigationController.navigationBar.scrollEdgeAppearance = navigationBarAppearence
+        
+        navigationController.navigationBar.barStyle = .default
+        navigationController.navigationBar.tintColor = Constants.textColor
+        
+        return navigationController
+    }
+    
+    /// Получить оформление навигационной панели.
+    ///
+    /// - Returns: Оформление навигационной панели.
+    func getNavigationBarAppearence() -> UINavigationBarAppearance {
+        let navigationBarAppearence = UINavigationBarAppearance()
+        
+        let imageAlignmentRectInsets = UIEdgeInsets(top: 0, left: -12, bottom: 0, right: 0)
+        let navigationBackButtonImage = UIImage(systemName: "chevron.backward")?.withAlignmentRectInsets(imageAlignmentRectInsets)
+        
+        navigationBarAppearence.setBackIndicatorImage(navigationBackButtonImage, transitionMaskImage: navigationBackButtonImage)
+        navigationBarAppearence.backButtonAppearance = getNavigationBarBackButtonAppearence()
+        navigationBarAppearence.titleTextAttributes = getNavigationBarTitleTextAttributes()
+        
+        return navigationBarAppearence
+    }
+    
+    /// Получить оформление кнопки "Назад" панели навигации.
+    ///
+    /// - Returns: Оформление кнопки "Назад" панели навигации.
+    func getNavigationBarBackButtonAppearence() -> UIBarButtonItemAppearance {
+        let backButtonAppearence = UIBarButtonItemAppearance()
+        backButtonAppearence.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        
+        return backButtonAppearence
+    }
+    
+    /// Получить атрибуты текста заголовка панели навигации.
+    ///
+    /// - Returns: Получить атрибуты текста заголовка панели навигации.
+    func getNavigationBarTitleTextAttributes() -> [NSAttributedString.Key : Any] {
+        let titleAttributes: [NSAttributedString.Key : Any] = [
+            .foregroundColor: Constants.textColor,
+            .font: UIFont.systemFont(ofSize: 18, weight: .bold)
+        ]
+        
+        return titleAttributes
     }
     
     func sceneDidDisconnect(_ scene: UIScene) {
