@@ -6,6 +6,7 @@
 //
 
 import Foundation
+
 import CoreLocation
 
 /// ``ILocationManager``.
@@ -22,6 +23,18 @@ public final class LocationManager: NSObject, ILocationManager {
     /// Локация пользователя.
     private var _userLocation: CLLocation?
     
+    public var onAuthorised: (()->())?
+    
+    public var isAuthorised: Bool {
+        didSet {
+            if !self.isAuthorised {
+                return
+            }
+            
+            self.onAuthorised?()
+        }
+    }
+    
     // MARK: - Inits
     
     /// ``ILocationManager``.
@@ -32,11 +45,12 @@ public final class LocationManager: NSObject, ILocationManager {
         self._userLocation = nil
         self._continuation = nil
         
+        self.isAuthorised = false
+        
         super.init()
         
         self._locationManager.delegate = self
         self._locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        checkAuthorization()
     }
     
     // MARK: - Methods
@@ -56,13 +70,14 @@ public final class LocationManager: NSObject, ILocationManager {
         return location
     }
     
-    // MARK: - Private
-    
-    /// Проверить авторизацию менеджера локации.
-    private func checkAuthorization() {
+    public func checkLocationAuthorization() {
         if _locationManager.authorizationStatus == .notDetermined {
             _locationManager.requestWhenInUseAuthorization()
+            
+            return
         }
+        
+        self.isAuthorised = _locationManager.authorizationStatus != .denied
     }
 }
 
@@ -98,5 +113,12 @@ extension LocationManager: CLLocationManagerDelegate {
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         _continuation?.resume(throwing: error)
         _continuation = nil
+    }
+    
+    /// Сообщает делегату, что изменился статус авторизации.
+    ///
+    /// - Parameter manager: Объект менеджера локации, сообщивший о событии.
+    public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        self.isAuthorised = manager.authorizationStatus != .notDetermined && manager.authorizationStatus != .denied
     }
 }

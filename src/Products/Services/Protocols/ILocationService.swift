@@ -16,6 +16,14 @@ public protocol ILocationService {
     ///   - latitude: Долгота, от которой необходимо получить расстояние до пользователя.
     ///   - longitude: Широта, от которой необходимо получить расстояние до пользователя.
     ///
-    /// - Returns: Расстояние до пользователя (в метрах).
-    func getDistanceToUserAsync(latitude: Double, longitude: Double) async throws -> Int
+    /// - Returns: Расстояние до пользователя (в метрах), если удалось рассчитать, иначе - nil.
+    func getDistanceToUserAsync(latitude: Double, longitude: Double) async -> Int?
+    
+    /// Проверить доступ к локации пользователя.
+    func checkLocationAuthorization()
+    
+    /// Установить обработку изменения доступа к локации пользователя.
+    ///
+    /// - Parameter handler: Обработка изменения доступа к локации пользователя.
+    func setOnLocationAuthorizationChange(handler: @escaping()->())
 }

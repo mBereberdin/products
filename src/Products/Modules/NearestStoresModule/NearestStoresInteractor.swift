@@ -24,7 +24,7 @@ public final class NearestStoresInteractor: INearestStoresInteractor {
     
     public weak var presenter: INearestStoresPresenter!
     
-    public var mappedStores: [(name: String, distance: Int)]
+    public var mappedStores: [(name: String, distance: Int?)]
     
     // MARK: - Inits
     
@@ -55,8 +55,16 @@ public final class NearestStoresInteractor: INearestStoresInteractor {
         
         for store in self.stores {
             let name = store.name
-            let distance = try await _locationService.getDistanceToUserAsync(latitude: store.location.latitude, longitude: store.location.longitude)
+            let distance = await _locationService.getDistanceToUserAsync(latitude: store.location.latitude, longitude: store.location.longitude)
             mappedStores.append((name, distance))
         }
+    }
+    
+    public func checkLocationAuthorization() {
+        self._locationService.checkLocationAuthorization()
+    }
+    
+    public func setOnLocationAuthorizationChange(handler: @escaping() -> ()) {
+        self._locationService.setOnLocationAuthorizationChange(handler: handler)
     }
 }

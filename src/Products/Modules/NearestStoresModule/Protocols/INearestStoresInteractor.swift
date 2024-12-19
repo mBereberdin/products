@@ -18,7 +18,7 @@ public protocol INearestStoresInteractor: AnyObject {
     var presenter: INearestStoresPresenter! { get set }
     
     /// Преобразованные магазины.
-    var mappedStores: [(name: String, distance: Int)] { get }
+    var mappedStores: [(name: String, distance: Int?)] { get }
     
     /// Магазины.
     var stores: [StoreDto] { get }
@@ -30,4 +30,12 @@ public protocol INearestStoresInteractor: AnyObject {
     
     /// Рассчитать расстояния от магазинов до пользователя.
     func calculateStoresDistanceAsync() async throws
+    
+    /// Проверить доступ к локации пользователя.
+    func checkLocationAuthorization()
+    
+    /// Установить обработку изменения доступа к локации пользователя.
+    ///
+    /// - Parameter handler: Обработка изменения доступа к локации пользователя.
+    func setOnLocationAuthorizationChange(handler: @escaping()->())
 }

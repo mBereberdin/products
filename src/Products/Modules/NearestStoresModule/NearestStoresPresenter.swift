@@ -46,18 +46,33 @@ public final class NearestStoresPresenter: @preconcurrency INearestStoresPresent
     @MainActor public func viewDidLoad() {
         view.configureUI()
         
-        Task {
+        Task(priority: .userInitiated) { @MainActor [] in
             do {
-                try await interactor.loadStoresAsync()
-                try await interactor.calculateStoresDistanceAsync()
+                try await self.interactor.loadStoresAsync()
+                try await self.interactor.calculateStoresDistanceAsync()
             } catch let error {
-                view.showAlert(description: error.localizedDescription)
+                self.view.showAlert(description: error.localizedDescription)
                 
                 return
             }
             
-            view.reloadTable()
+            self.view.reloadTable()
         }
+        
+        self.interactor.setOnLocationAuthorizationChange { [unowned self] in
+            Task { @MainActor [unowned self] in
+                do {
+                    try await self.interactor.calculateStoresDistanceAsync()
+                } catch let error {
+                    self.view.showAlert(description: error.localizedDescription)
+                    
+                    return
+                }
+                
+                self.view.reloadTable()
+            }
+        }
+        self.interactor.checkLocationAuthorization()
     }
     
     public func getRowsCount() -> Int {
@@ -70,9 +85,24 @@ public final class NearestStoresPresenter: @preconcurrency INearestStoresPresent
         }
         
         let store = interactor.mappedStores[row]
-        let distanceString = store.distance > 1000 ?
-        String(format: DISTANCE_AWAY_FROM_USER_MESSAGE_TEMPLATE, store.distance/1000, "км") :
-        String(format: DISTANCE_AWAY_FROM_USER_MESSAGE_TEMPLATE, store.distance, "м")
+        let distanceString: String
+        
+        if let distance = store.distance {
+            let resultDistance: Int
+            let resultMeasure: String
+            
+            if distance > 1000 {
+                resultDistance = distance/1000
+                resultMeasure = "км"
+            } else {
+                resultDistance = distance
+                resultMeasure = "м"
+            }
+            
+            distanceString = String(format: DISTANCE_AWAY_FROM_USER_MESSAGE_TEMPLATE, resultDistance, resultMeasure)
+        } else {
+            distanceString = "Не удалось рассчитать."
+        }
         
         view.setUpCellInfo(at: row, with: (store.name, distanceString))
     }
