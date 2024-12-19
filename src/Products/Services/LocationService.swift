@@ -15,7 +15,7 @@ public final class LocationService: NSObject, ILocationService {
     // MARK: - Fields
     
     /// ``ILocationManager``.
-    private let _locationManager: ILocationManager
+    private var _locationManager: ILocationManager
     
     // MARK: - Inits
     
@@ -28,11 +28,21 @@ public final class LocationService: NSObject, ILocationService {
     
     // MARK: - Methods
     
-    public func getDistanceToUserAsync(latitude: Double, longitude: Double) async throws -> Int {
-        let userLocation = try await _locationManager.getUserLocationAsync()
+    public func getDistanceToUserAsync(latitude: Double, longitude: Double) async -> Int? {
+        guard let userLocation = try? await _locationManager.getUserLocationAsync() else {
+            return nil
+        }
         let pointLocation = CLLocation(latitude: latitude, longitude: longitude)
         let distance = Int(userLocation.distance(from: pointLocation))
         
         return distance
+    }
+    
+    public func checkLocationAuthorization() {
+        self._locationManager.checkLocationAuthorization()
+    }
+    
+    public func setOnLocationAuthorizationChange(handler: @escaping()->()) {
+        self._locationManager.onAuthorised = handler
     }
 }
